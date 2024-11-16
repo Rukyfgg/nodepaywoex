@@ -3,10 +3,11 @@ const crypto = require('crypto');
 const ProxyChecker = require('./proxyChecker');
 
 class Bot {
-  constructor(config, logger) {
+  constructor(config, logger, telegramBot) {
     this.config = config;
     this.logger = logger;
-    this.proxyCheck = new ProxyChecker(config, logger);
+    this.telegramBot = telegramBot;
+    this.proxyCheck = new ProxyChecker(config, logger);// Pass the Telegram bot instance
   }
 
   async connect(token, proxy = null) {
@@ -14,16 +15,7 @@ class Bot {
       const userAgent = 'Mozilla/5.0 ... Safari/537.3';
       const accountInfo = await this.getSession(token, userAgent, proxy);
 
-      console.log(
-        `✅ ${'Connected to session'.green} for UID: ${accountInfo.uid}`
-      );
-      this.logger.info('Session info', {
-        uid: accountInfo.uid,
-        name: accountInfo.name,
-        useProxy: !!proxy,
-      });
-
-      console.log('');
+      this.telegramBot.sendMessage('YOUR_CHAT_ID', `Connected to session for UID: ${accountInfo.uid}`);
 
       const interval = setInterval(async () => {
         try {
@@ -38,9 +30,10 @@ class Bot {
     } catch (error) {
       console.log(`❌ ${'Connection error'.red}: ${error.message}`);
       this.logger.error('Connection error', { error: error.message, proxy });
+      this.telegramBot.sendMessage('YOUR_CHAT_ID', `❌ Connection error: ${error.message}`);
     }
   }
-
+  
   async getSession(token, userAgent, proxy) {
     try {
       const config = {
